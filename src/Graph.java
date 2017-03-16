@@ -99,7 +99,7 @@ public class Graph {
             }
             g2.fillRect(100 + (79 * i), (int)(652 - (500*((double)(MaindiffCounts.get(index)[i])/topNum))), 30, (int)(500*((double)(MaindiffCounts.get(index)[i])/topNum)));
             g2.setColor(Color.BLACK);
-            g2.drawString(String.valueOf(MaindiffCounts.get(index)[i]), 115+(79*i) - ((fontMetrics.stringWidth(String.valueOf(MaindiffCounts.get(index)[i])))/2), (int)(640-(500*((double)(MaindiffCounts.get(index)[i])/topNum))));
+            g2.drawString(String.valueOf(MaindiffCounts.get(index)[i]), 115+(79*i) - ((fontMetrics.stringWidth(String.valueOf(MaindiffCounts.get(index)[i])))/2), (int)(640-(500*((double)(MaindiffCounts.get(index)[i])/topNum)))); //TODO: Throw in percent here
         }
 
         //Draw all of the main categories as well as the time section title.
