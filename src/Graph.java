@@ -90,6 +90,12 @@ public class Graph {
             g2.drawString(String.valueOf(increment*i), 63-fontMetrics.stringWidth(String.valueOf(increment*i)), 655-(50*i));
         }
 
+
+        int sum = 0;
+        for (int i = 0; i < MaindiffCounts.get(index).length; i++) {
+            sum += MaindiffCounts.get(index)[i];
+        }
+
         //Draws the Bars along with the numbers above the bars that represent the number of instances.
         for (int i = 0; i < MaindiffCounts.get(index).length; i++) {
             if (i%2 == 0) {
@@ -99,6 +105,11 @@ public class Graph {
             }
             g2.fillRect(100 + (79 * i), (int)(652 - (500*((double)(MaindiffCounts.get(index)[i])/topNum))), 30, (int)(500*((double)(MaindiffCounts.get(index)[i])/topNum)));
             g2.setColor(Color.BLACK);
+
+            String percentage = String.valueOf((MaindiffCounts.get(index)[i]*1.0)/sum*100);
+            String percentageChop = percentage.substring(0, Math.min(percentage.length(), 4)) + "%";
+            g2.drawString(percentageChop, 115+(79*i) - ((fontMetrics.stringWidth(percentageChop))/2), (int)(640-(500*((double)(MaindiffCounts.get(index)[i])/topNum))-15)); //TODO: Throw in percent here
+
             g2.drawString(String.valueOf(MaindiffCounts.get(index)[i]), 115+(79*i) - ((fontMetrics.stringWidth(String.valueOf(MaindiffCounts.get(index)[i])))/2), (int)(640-(500*((double)(MaindiffCounts.get(index)[i])/topNum)))); //TODO: Throw in percent here
         }
 
