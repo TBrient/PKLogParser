@@ -24,7 +24,7 @@ public class Graph {
         this.index = Index;
         int highestIndex = 0;
         for (int i = 1; i < 9; i++) { //Finds the most number of instances in a category and sets it to highestIndex.
-            System.out.println("index: " + index);
+//            System.out.println("index: " + index);
             if (MaindiffCounts.get(index)[i] > MaindiffCounts.get(index)[highestIndex]){
                 highestIndex = i;
             }
@@ -52,7 +52,7 @@ public class Graph {
         firstLine = firstLine.split(" \\| ")[2];
         lastLine = lastLine.split(" \\| ")[2];
 
-        finalString = lastLine + " - " + firstLine; //Create the string to be displayed at the top.
+        finalString = firstLine + " - " + lastLine ; //Create the string to be displayed at the top.
     }
 
     public int changeHeight(int CurrentHeight, int HighestBar){ //This is a recursive method that shrinks the height of the graph until it is

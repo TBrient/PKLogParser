@@ -16,6 +16,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.commons.io.FileUtils;
 
@@ -375,6 +376,21 @@ public class Panel extends JPanel implements ActionListener {
         }
 
         File[] filesInFolder = new File(UnzipLoc).listFiles();
+        Arrays.sort(filesInFolder, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                int n1 = getNumber(o1.getName());
+                int n2 = getNumber(o2.getName());
+                return n2 - n1;
+            }
+
+            private int getNumber(String name) {
+                String[] number = name.split("\\.");
+                return Integer.parseInt(number[2]);
+            }
+        });
+
+
         int numberOfFiles = filesInFolder.length;
 
         filesInFolder = checkDirectoryForFolder(numberOfFiles, filesInFolder);
