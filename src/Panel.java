@@ -14,12 +14,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Created by Tyler Brient
+ */
 public class Panel extends JPanel implements ActionListener {
 
     private int whatToDraw = -1; //This corresponds to the index of the thing to draw in the JComboBox, and is used to indicate paintComponent to draw the graphs. -1 is nothing.
@@ -37,11 +43,15 @@ public class Panel extends JPanel implements ActionListener {
     //Main
     private ArrayList<int[]> MaindiffCounts = new ArrayList<>();
     private ArrayList<String> MainfunctionsIn = new ArrayList<>();
+    //Greater than 10
+    private long[] timeSplits;
+    private int[] timeSplitCounts;
 
     private JComboBox dropDown;
     private MyComboBoxRenderer comboBoxRenderer = new MyComboBoxRenderer();
     private JFrame f; //The JFrame for the Loading Bar
     private JFrame List10; //The Extra JFrame that lists the 10+ second functions
+    private JFrame timeHistogram;
     private JProgressBar progressBar; //The Loading Bar
     private TitledBorder border; //The Border around the Loading Bar
     private int unzipCounter = 0; //This counts the number of Zip Files to display the correct amount on the loading bar
@@ -86,7 +96,7 @@ public class Panel extends JPanel implements ActionListener {
         onlyUIEvent.addActionListener(this);
         excludeUIEvent.addActionListener(this);
 
-        graphRect = new Rectangle(0, 115, 800,675); //Bounds for the screenshot
+//        graphRect = new Rectangle(0, 115, 800,675); //Bounds for the screenshot
 
         //Loading Screen Code:
         f = new JFrame("Parsing Files, Please Wait...");
@@ -103,6 +113,10 @@ public class Panel extends JPanel implements ActionListener {
         List10 = new JFrame(">10 Second Functions");
         List10.setBounds(855, 0, 300, 500);
         List10.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        timeHistogram = new JFrame(">10 Second Functions Frequency");
+        timeHistogram.setBounds(0, 0, 855, 800); //(x, y, w, h)
+        timeHistogram.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         AllfunctionsIn.add(0, "All"); //Makes the first entry in AllfunctionsIn "All"
         AlldiffCounts.add(new int[9]); //0 is < 0.5, 1 is 0.5-1, 2 is 1-1.5, 3 is 1.5-2, 4 is 2-3, 5 is 3-4, 6 is 4-5, 7 is 5-10, 8 is >10
@@ -128,24 +142,26 @@ public class Panel extends JPanel implements ActionListener {
             MSLines.addAll(unzip(selectedFiles[i].getAbsolutePath(), selectedFiles.length)); //Adds all Lines containing "milliseconds" to MSLines. Unzip returns an ArrayList of Strings
         }
 
+        generateTimeChunks();
+
         //Screenshot Button Code
-        screenshotButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                try {
-                    Robot robot = new Robot();
-                    BufferedImage image = robot.createScreenCapture(graphRect); //Capture the screen
-                    String midname = selectedFiles[0].toString().split("\\\\")[4];
-
-                    File outputfile = new File("Output/" + midname + "/HistogramOf" + AllfunctionsIn.get(selectedFuncIndex) + ".jpg"); //File will always be in the Output Folder, under the folder of the time period, called HistogramOf(FunctionName).jpg
-                    outputfile.getParentFile().mkdirs(); //Make sure that the file folder is there, and if not, create it.
-                    ImageIO.write(image, "jpg", outputfile); //Write the bufferedImage
-
-                } catch (Exception e) {
-                    System.out.println("Screenshot capturing failed");
-                }
-            }
-        });
+//        screenshotButton.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent event) {
+//                try {
+//                    Robot robot = new Robot();
+//                    BufferedImage image = robot.createScreenCapture(graphRect); //Capture the screen
+//                    String midname = selectedFiles[0].toString().split("\\\\")[4];
+//
+//                    File outputfile = new File("Output/" + midname + "/HistogramOf" + AllfunctionsIn.get(selectedFuncIndex) + ".jpg"); //File will always be in the Output Folder, under the folder of the time period, called HistogramOf(FunctionName).jpg
+//                    outputfile.getParentFile().mkdirs(); //Make sure that the file folder is there, and if not, create it.
+//                    ImageIO.write(image, "jpg", outputfile); //Write the bufferedImage
+//
+//                } catch (Exception e) {
+//                    System.out.println("Screenshot capturing failed");
+//                }
+//            }
+//        });
         makeArrayLists();
         sortAlphabetically();
         sortSlowest();
@@ -188,7 +204,7 @@ public class Panel extends JPanel implements ActionListener {
 
 
         add(dropDown);
-        add(screenshotButton);
+//        add(screenshotButton);
         whatToDraw = 0; //Initially draw the "All" graph
         graph.calculateGraph(whatToDraw, MaindiffCounts, MSLines);
         dropDown.addActionListener(new ActionListener() {
@@ -204,6 +220,46 @@ public class Panel extends JPanel implements ActionListener {
             }
         });
         List10.setVisible(true);
+    }
+
+    private Date formatLogDate(String dateString) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); //FORMAT: 2017/08/10 08:04:09
+        try {
+            return formatter.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void generateTimeChunks() {
+        //Get the Lines to Determine the start/end Time and Dates
+        String firstLine = MSLines.get(0);
+        String lastLine = MSLines.get(MSLines.size()-1);
+
+        //Parse the two lines by splitting them at "|" and taking the third piece of the spit.
+        firstLine = firstLine.split(" \\| ")[2];
+        lastLine = lastLine.split(" \\| ")[2];
+
+        System.out.println("First: " + firstLine);
+        System.out.println("Last: " + lastLine);
+        Date parsedFirstDate = formatLogDate(firstLine);
+        Date parsedSecondDate = formatLogDate(lastLine);
+        System.out.println("First: " + parsedFirstDate);
+        System.out.println("Last: " + parsedSecondDate);
+        System.out.println("First: " + parsedFirstDate.getTime());
+        System.out.println("Last: " + parsedSecondDate.getTime());
+        long differenceInMS = parsedSecondDate.getTime() - parsedFirstDate.getTime();
+        System.out.println("Difference: " + differenceInMS);
+        long differenceInMins = differenceInMS / (60 * 1000) % 60;
+        final long minsInMS15 = 15 * 60 * 1000;
+        timeSplits = new long[(int)differenceInMins % 15];
+        timeSplitCounts = new int[timeSplits.length];
+        long firstDateTime = parsedFirstDate.getTime();
+        for (int i = 0; i < timeSplits.length; i++) {
+            timeSplits[i] = firstDateTime + minsInMS15 * i;
+        }
+
     }
 
     public void paintComponent(Graphics g) {
@@ -376,6 +432,10 @@ public class Panel extends JPanel implements ActionListener {
         }
 
         File[] filesInFolder = new File(UnzipLoc).listFiles();
+        for (int i = 0; i < filesInFolder.length; i++) {
+            System.out.print(filesInFolder[i] + ", ");
+        }
+        System.out.println("]");
         Arrays.sort(filesInFolder, new Comparator<File>() {
             @Override
             public int compare(File o1, File o2) {
@@ -386,11 +446,17 @@ public class Panel extends JPanel implements ActionListener {
 
             private int getNumber(String name) {
                 String[] number = name.split("\\.");
-                return Integer.parseInt(number[2]);
+                if (number.length > 2) {
+                    return Integer.parseInt(number[2]);
+                } else {
+                    return 0;
+                }
             }
         });
-
-
+        for (int i = 0; i < filesInFolder.length; i++) {
+            System.out.print(filesInFolder[i] + ", ");
+        }
+        System.out.println("]");
         int numberOfFiles = filesInFolder.length;
 
         filesInFolder = checkDirectoryForFolder(numberOfFiles, filesInFolder);
@@ -443,7 +509,7 @@ public class Panel extends JPanel implements ActionListener {
         return false;
     }
 
-    public void checkAndAdd(int number, String function){ //This function takes in the number of milliseconds, previously parsed, and the
+    public void checkAndAdd(int number, String function, String date){ //This function takes in the number of milliseconds, previously parsed, and the
         if (!isFuncWithWhitelist(function)) {
             if (number < 500) {                               //function name. Then it checks the number of milliseconds to see what category it
                 AlldiffCounts.get(0)[0] = AlldiffCounts.get(0)[0] + 1;//falls into. After it knows that, it adds one instane to the "All" category, and to
@@ -472,6 +538,18 @@ public class Panel extends JPanel implements ActionListener {
             } else {
                 AlldiffCounts.get(0)[8] = AlldiffCounts.get(0)[8] + 1;
                 addFunction(8, function);
+                addFunctionToTimeHistogram(date);
+            }
+        }
+    }
+
+    private void addFunctionToTimeHistogram(String dateString) {
+        Date formattedDate = formatLogDate(dateString);
+        long formattedDateTime = formattedDate.getTime();
+        for (int i = 0; i < timeSplits.length - 1; i++) {
+            if (formattedDateTime >= timeSplits[i] && formattedDateTime <= timeSplits[i+1]) {
+                timeSplitCounts[i] = timeSplitCounts[i]+1;
+                break;
             }
         }
     }
@@ -501,149 +579,159 @@ public class Panel extends JPanel implements ActionListener {
     public void makeArrayLists(){ //This function parses the lines into millisecond integers, and function strings.
         for (int i = 0; i < MSLines.size(); i++) {
             int number;
-//            System.out.println(MSLines.get(i));
+            System.out.println(MSLines.get(i));
             try {
 
-                String[] numberBefore = MSLines.get(i).split("took | milliseconds"); //Create milliseconds number
-                number = Integer.parseInt(numberBefore[1]); //parse the number string as an int
-                String[] function = MSLines.get(i).split(": | - completed"); //Create the function string[]
-                if (function.length > 2) {
-                    checkAndAdd(number, function[1]);
+                    String[] numberBefore = MSLines.get(i).split("took | milliseconds"); //Create milliseconds number
+                    number = Integer.parseInt(numberBefore[1]); //parse the number string as an int
+                    String[] function;
+                    if (MSLines.get(i).contains(" - completed")) {
+                        function = MSLines.get(i).split(": | - completed"); //Create the function string[]
+                    } else if (MSLines.get(i).contains(" completed took")){
+                        function = MSLines.get(i).split(": | completed"); //Create the function string[]
+                    } else {
+                        function = MSLines.get(i).split(": | Completed"); //Create the function string[]
+                    }
+                    String[] date = MSLines.get(i).split("    \\| | \\| ");
+                    for (int j = 0; j < date.length; j++) {
+                        System.out.println(j + ": " + date[j]);
+                    }
+                    if (function.length > 2) {
+                        checkAndAdd(number, function[1], date[2]);
+                    }
+                } catch(Exception e) {
+                    //System.out.println(e);
+                    //e.printStackTrace();
                 }
-            } catch(Exception e) {
-                //System.out.println(e);
-                //e.printStackTrace();
             }
         }
-    }
 
-    public void printSlowest() { // Prints the one with the most 10+ seconds and sets it's color to black.
-        int highestIndex = 1;
+        public void printSlowest() { // Prints the one with the most 10+ seconds and sets it's color to black.
+            int highestIndex = 1;
 
-        for (int i = 2; i < MaindiffCounts.size(); i++) {
-            if (MaindiffCounts.get(i)[8] > MaindiffCounts.get(highestIndex)[8]) {
-                highestIndex = i;
+            for (int i = 2; i < MaindiffCounts.size(); i++) {
+                if (MaindiffCounts.get(i)[8] > MaindiffCounts.get(highestIndex)[8]) {
+                    highestIndex = i;
+                }
+            }
+            if (MaindiffCounts.get(highestIndex)[8] != 0) {
+                comboBoxRenderer.worst(highestIndex); //Sets the color of the item with the most number of 10+ instances to black
             }
         }
-        if (MaindiffCounts.get(highestIndex)[8] != 0) {
-            comboBoxRenderer.worst(highestIndex); //Sets the color of the item with the most number of 10+ instances to black
-        }
-    }
 
-    public void setColors(){ //determine the ratio of short times, to medium times, to long times, and set the color in the dropdown appropriately.
-        for (int i = 0; i < MaindiffCounts.size(); i++) {
-            int firstNum = MaindiffCounts.get(i)[0] + MaindiffCounts.get(i)[1] + MaindiffCounts.get(i)[2]; //short times are the first three times
-            int secondNum = MaindiffCounts.get(i)[3] + MaindiffCounts.get(i)[4] + MaindiffCounts.get(i)[5]; //Medium times are the middle three times
-            int thirdNum = MaindiffCounts.get(i)[6] + MaindiffCounts.get(i)[7] + MaindiffCounts.get(i)[8]; //Long times are the last three times\
+        public void setColors(){ //determine the ratio of short times, to medium times, to long times, and set the color in the dropdown appropriately.
+            for (int i = 0; i < MaindiffCounts.size(); i++) {
+                int firstNum = MaindiffCounts.get(i)[0] + MaindiffCounts.get(i)[1] + MaindiffCounts.get(i)[2]; //short times are the first three times
+                int secondNum = MaindiffCounts.get(i)[3] + MaindiffCounts.get(i)[4] + MaindiffCounts.get(i)[5]; //Medium times are the middle three times
+                int thirdNum = MaindiffCounts.get(i)[6] + MaindiffCounts.get(i)[7] + MaindiffCounts.get(i)[8]; //Long times are the last three times\
 
-            if (firstNum > secondNum && firstNum >= thirdNum) {
-                comboBoxRenderer.GreenColor();
-            } else if (secondNum >= firstNum && secondNum >= thirdNum) { //Second number is most common, all >=
-                comboBoxRenderer.YellowColor();
-            } else {
-                comboBoxRenderer.RedColor();
+                if (firstNum > secondNum && firstNum >= thirdNum) {
+                    comboBoxRenderer.GreenColor();
+                } else if (secondNum >= firstNum && secondNum >= thirdNum) { //Second number is most common, all >=
+                    comboBoxRenderer.YellowColor();
+                } else {
+                    comboBoxRenderer.RedColor();
+                }
             }
         }
-    }
 
-    public void sortAlphabetically(){ //Sorts both arrayLists alphabetically for ease of viewing.
-        for (int i = 1; i < AllfunctionsIn.size(); i++) {
-            for (int j = i + 1; j < AllfunctionsIn.size(); j++) {
-                if (AllfunctionsIn.get(i).compareTo(AllfunctionsIn.get(j))>0) {
-                    String temp = AllfunctionsIn.get(i);
-                    AllfunctionsIn.set(i, AllfunctionsIn.get(j));
-                    AllfunctionsIn.set(j, temp);
-                    int[] temp2 = AlldiffCounts.get(i);
-                    AlldiffCounts.set(i, AlldiffCounts.get(j));
-                    AlldiffCounts.set(j, temp2);
-                    for (int k = 0; k < AllTenPlusIndexes.size(); k++) {
-                        if (AllTenPlusIndexes.get(k) == i) {
-                            AllTenPlusIndexes.set(k, j);
-                        } else if (AllTenPlusIndexes.get(k) == j) {
-                            AllTenPlusIndexes.set(k, i);
+        public void sortAlphabetically(){ //Sorts both arrayLists alphabetically for ease of viewing.
+            for (int i = 1; i < AllfunctionsIn.size(); i++) {
+                for (int j = i + 1; j < AllfunctionsIn.size(); j++) {
+                    if (AllfunctionsIn.get(i).compareTo(AllfunctionsIn.get(j))>0) {
+                        String temp = AllfunctionsIn.get(i);
+                        AllfunctionsIn.set(i, AllfunctionsIn.get(j));
+                        AllfunctionsIn.set(j, temp);
+                        int[] temp2 = AlldiffCounts.get(i);
+                        AlldiffCounts.set(i, AlldiffCounts.get(j));
+                        AlldiffCounts.set(j, temp2);
+                        for (int k = 0; k < AllTenPlusIndexes.size(); k++) {
+                            if (AllTenPlusIndexes.get(k) == i) {
+                                AllTenPlusIndexes.set(k, j);
+                            } else if (AllTenPlusIndexes.get(k) == j) {
+                                AllTenPlusIndexes.set(k, i);
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    public void sortSlowest(){ //Sorts the arrayList of Indexes with instances of 10+ seconds by most number of 10 plus indexes.
-        for (int i = 0; i < AllTenPlusIndexes.size(); i++) {
-            for (int j = i + 1; j < AllTenPlusIndexes.size(); j++) {
-                int FirstNumber = AlldiffCounts.get(AllTenPlusIndexes.get(i))[8];
-                int SecondNumber = AlldiffCounts.get(AllTenPlusIndexes.get(j))[8];
-                if (SecondNumber > FirstNumber) {
-                    int temp = AllTenPlusIndexes.get(i);
-                    AllTenPlusIndexes.set(i, AllTenPlusIndexes.get(j));
-                    AllTenPlusIndexes.set(j, temp);
-                }
-
-            }
-        }
-        for (int i = 0; i < AllTenPlusIndexes.size(); i++) {
-            if (AllfunctionsIn.get(AllTenPlusIndexes.get(i)).contains("UIEvent")) {
-                UITenPlusIndexes.add(AllTenPlusIndexes.get(i));
-            } else {
-                NotUITenPlusIndexes.add(AllTenPlusIndexes.get(i));
-            }
-        }
-
-    }
-
-    public void printArrayList(ArrayList arrayList){
-        System.out.print("{");
-        for (int i = 0; i < arrayList.size(); i++) {
-            System.out.print(arrayList.get(i) + ", ");
-        }
-        System.out.println("}");
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String[] final10List = new String[AllTenPlusIndexes.size()+2];
-        final10List[0] = "# of Instances | Name";
-
-        MaindiffCounts.clear();
-        MainfunctionsIn.clear();
-        //All button pressed down
-        if (e.getActionCommand().equals(allString)) {
-            MaindiffCounts.addAll(AlldiffCounts);
-            MainfunctionsIn.addAll(AllfunctionsIn);
+        public void sortSlowest(){ //Sorts the arrayList of Indexes with instances of 10+ seconds by most number of 10 plus indexes.
             for (int i = 0; i < AllTenPlusIndexes.size(); i++) {
-                final10List[i+1] =  AlldiffCounts.get(AllTenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(AllTenPlusIndexes.get(i));
+                for (int j = i + 1; j < AllTenPlusIndexes.size(); j++) {
+                    int FirstNumber = AlldiffCounts.get(AllTenPlusIndexes.get(i))[8];
+                    int SecondNumber = AlldiffCounts.get(AllTenPlusIndexes.get(j))[8];
+                    if (SecondNumber > FirstNumber) {
+                        int temp = AllTenPlusIndexes.get(i);
+                        AllTenPlusIndexes.set(i, AllTenPlusIndexes.get(j));
+                        AllTenPlusIndexes.set(j, temp);
+                    }
+
+                }
             }
-        } else if (e.getActionCommand().equals(onlyUIString)) { //only UIEvent Button pressed down
-            MaindiffCounts.addAll(UIdiffCounts);
-            MainfunctionsIn.addAll(UIfunctionsIn);
-            for (int i = 0; i < UITenPlusIndexes.size(); i++) {
-                final10List[i+1] =  AlldiffCounts.get(UITenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(UITenPlusIndexes.get(i));
+            for (int i = 0; i < AllTenPlusIndexes.size(); i++) {
+                if (AllfunctionsIn.get(AllTenPlusIndexes.get(i)).contains("UIEvent")) {
+                    UITenPlusIndexes.add(AllTenPlusIndexes.get(i));
+                } else {
+                    NotUITenPlusIndexes.add(AllTenPlusIndexes.get(i));
+                }
             }
-        } else if (e.getActionCommand().equals(excludeUIString)) { //exclude UIEvent button pressed down
-            MaindiffCounts.addAll(excludeUIdiffCounts);
-            MainfunctionsIn.addAll(excludeUIfunctionsIn);
-            for (int i = 0; i < NotUITenPlusIndexes.size(); i++) {
-                final10List[i+1] =  AlldiffCounts.get(NotUITenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(NotUITenPlusIndexes.get(i));
-            }
+
         }
 
-        dropDown.removeAllItems();
-        for(String func: MainfunctionsIn){
-            dropDown.addItem(func);
+        public void printArrayList(ArrayList arrayList){
+            System.out.print("{");
+            for (int i = 0; i < arrayList.size(); i++) {
+                System.out.print(arrayList.get(i) + ", ");
+            }
+            System.out.println("}");
         }
 
-        listModel.clear();
-        for(String ListEntry: final10List) {
-            listModel.addElement(ListEntry);
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String[] final10List = new String[AllTenPlusIndexes.size()+2];
+            final10List[0] = "# of Instances | Name";
+
+            MaindiffCounts.clear();
+            MainfunctionsIn.clear();
+            //All button pressed down
+            if (e.getActionCommand().equals(allString)) {
+                MaindiffCounts.addAll(AlldiffCounts);
+                MainfunctionsIn.addAll(AllfunctionsIn);
+                for (int i = 0; i < AllTenPlusIndexes.size(); i++) {
+                    final10List[i+1] =  AlldiffCounts.get(AllTenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(AllTenPlusIndexes.get(i));
+                }
+            } else if (e.getActionCommand().equals(onlyUIString)) { //only UIEvent Button pressed down
+                MaindiffCounts.addAll(UIdiffCounts);
+                MainfunctionsIn.addAll(UIfunctionsIn);
+                for (int i = 0; i < UITenPlusIndexes.size(); i++) {
+                    final10List[i+1] =  AlldiffCounts.get(UITenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(UITenPlusIndexes.get(i));
+                }
+            } else if (e.getActionCommand().equals(excludeUIString)) { //exclude UIEvent button pressed down
+                MaindiffCounts.addAll(excludeUIdiffCounts);
+                MainfunctionsIn.addAll(excludeUIfunctionsIn);
+                for (int i = 0; i < NotUITenPlusIndexes.size(); i++) {
+                    final10List[i+1] =  AlldiffCounts.get(NotUITenPlusIndexes.get(i))[8] + ": " + AllfunctionsIn.get(NotUITenPlusIndexes.get(i));
+                }
+            }
+
+            dropDown.removeAllItems();
+            for(String func: MainfunctionsIn){
+                dropDown.addItem(func);
+            }
+
+            listModel.clear();
+            for(String ListEntry: final10List) {
+                listModel.addElement(ListEntry);
+            }
+
+            graph.calculateGraph(whatToDraw, MaindiffCounts, MSLines);
+
+            comboBoxRenderer.clearColors();
+            setColors();
+            printSlowest();
+            repaint();
         }
 
-        graph.calculateGraph(whatToDraw, MaindiffCounts, MSLines);
-
-        comboBoxRenderer.clearColors();
-        setColors();
-        printSlowest();
-        repaint();
     }
-
-    //Created by Tyler Brient
-}

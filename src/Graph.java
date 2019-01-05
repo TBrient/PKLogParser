@@ -3,7 +3,7 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
 /**
- * Created by Tyler on 8/2/2016.
+ * Created by Tyler Brient
  */
 public class Graph {
 
@@ -20,7 +20,6 @@ public class Graph {
     }
 
     public void calculateGraph(int Index, ArrayList<int[]> MaindiffCounts, ArrayList<String> MSLines) {
-        System.out.println(index);
         this.index = Index;
         int highestIndex = 0;
         for (int i = 1; i < 9; i++) { //Finds the most number of instances in a category and sets it to highestIndex.

@@ -1,3 +1,0 @@
-SubmissionRecordDashboard
-SubmissionRecordResults
-/remoting/patientlisttask

@@ -8,6 +8,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+/**
+ * Created by Tyler Brient
+ */
 public class MyComboBoxRenderer extends JLabel implements ListCellRenderer { //The custom combobox renderer which allows me to set the color of the text and the background color per item.
 
     private ArrayList<Color> colors = new ArrayList<Color>();
